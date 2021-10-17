@@ -78,18 +78,6 @@ func (i *CryptoXOR_Internal) XORFunction() (output []rune) {
 	return
 }
 
-func reverseRune(data []rune) (output []rune) {
-
-	size := len(data)
-	output = make([]rune, size)
-
-	size -= 1
-	for index := range data {
-		output[index] = data[size-index]
-	}
-	return
-}
-
 func reverseString(str string) (result string) {
 	for _, v := range str {
 		result = string(v) + result
