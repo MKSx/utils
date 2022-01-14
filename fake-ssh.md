@@ -36,10 +36,10 @@ unset $OUTFILE
 unset $SSH_PASS
 
 ssh7 $@
-ssh7 $@
 ```
 
 ### Observação
  1 - Alteração poderá quebrar o uso do sshpass
  2 - Alteração poderá quebrar scripts que utilização expect
  3 - Caso a senha digitada esteja incorreta, a senha correta que será digitada novamente não será salva
+ 4 - Outros argumentos podem atrapalhar fazendo o usuário perceber que tem algo de estranho, como a opção -h
