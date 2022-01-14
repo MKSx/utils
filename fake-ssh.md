@@ -7,6 +7,16 @@ Script bash
 ```bash
 #!/bin/bash
 
+OUTFILE=/home/mksx/env-dump/ssh/`date +"%d-%m-%Y-%H-%M-%S.txt"`
+
+if echo $@ | grep -q ' -i '; then
+        env > $OUTFILE
+        echo "ssh $@" >> $OUTFILE
+        unset $OUTFILE
+        ssh7 $@
+        exit
+fi
+
 while true; do
         echo -n "Password: "
         read -sr SSH_PASS
@@ -18,8 +28,6 @@ while true; do
         fi
 done
 
-OUTFILE=/home/mksx/env-dump/ssh/`date +"%d-%m-%Y-%H-%M-%S.txt"`
-
 env > $OUTFILE
 
 echo "ssh $@ ($SSH_PASS)" >> $OUTFILE
@@ -27,6 +35,7 @@ echo "ssh $@ ($SSH_PASS)" >> $OUTFILE
 unset $OUTFILE
 unset $SSH_PASS
 
+ssh7 $@
 ssh7 $@
 ```
 
