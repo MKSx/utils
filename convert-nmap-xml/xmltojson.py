@@ -1,51 +1,90 @@
+
 import xml.etree.ElementTree as ET
 import json, argparse, sys
 
-def getInfo(elements):
-    flag_addr = False
+def parse_hostnames(hosts, debug=False):
+    ret = []
+    for name in hosts:
+        
+        if name.tag == 'hostname':
+            ret.append(name.attrib['name'])
 
+    if debug:
+        print(ret)
+        
+    return ret if len(ret) > 0 else None
+
+def parse_ports(ports):
+    ret = {}
+    for port in ports:
+        if port.tag != 'port':
+            continue
+        
+        portid = ''
+        temp = {
+            'protocol': '',
+            'state': None,
+            'service': None,
+            'banner': None
+        }
+        portid = port.attrib['portid']
+        temp['protocol'] = port.attrib['protocol']
+        for info in port:
+            if info.tag == 'state':
+                temp['state'] = info.attrib['state']
+            elif info.tag == 'service':
+                temp['service'] = info.attrib['name']
+            elif info.tag == 'script':
+                if info.attrib['id'] == 'banner':
+                    temp['banner'] = info.attrib['output']
+        ret[portid] = temp
+
+    return ret if len(ret) > 0 else None
+
+def parse_host(host):
     ret = {
-        'ip': '',
-        'hostnames': [],
-        'ports': []
+        'hostname': [],
+        'ports': None
     }
-    temp = ''
-    for element in elements:
-        if flag_addr == False and element.tag == 'address':
-            attr = element.attrib
-            if 'addrtype' in attr and attr['addrtype'] == 'ipv4' and 'addr' in attr:
-                ret['ip'] = attr['addr']
-                flag_addr = True
-        elif element.tag == 'hostnames' and len(element) > 0:
-            for hostname in element:
-                if hostname.tag == 'hostname':
-                    attr = hostname.attrib
-                    if 'name' in attr:
-                        ret['hostnames'].append(attr['name'])
-                        break
-        elif element.tag == 'ports':
-            for port in element:
-                if port.tag == 'port':
-                    attr = port.attrib
-                    
-                    if 'portid' in attr:
-                        temp = {
-                            'port': attr['portid']
-                        }
-                        for i in port:
-                            if i.tag == 'state':
-                                attr = i.attrib
-                                if 'state' in attr:
-                                    temp['state'] = attr['state']
-                            elif i.tag == 'service':
-                                attr = i.attrib
-                                if 'name' in attr:
-                                    temp['service'] = attr['name']
-                        
-                        ret['ports'].append(temp)
-            
-    return ret
+    ip = None
+    for child in host:
+        if child.tag == 'address':
+            if ip == None and child.attrib['addrtype'] == 'ipv4':
+                ip = child.attrib['addr']
+        if child.tag == 'hostnames':
+            ret['hostname'] = parse_hostnames(child)
+        if child.tag == 'ports':
+            ret['ports'] = parse_ports(child)
+    
+    return ip,ret
+    
 
+def parse_file(file):
+    tree = ET.parse(file)
+    root = tree.getroot()
+
+
+    scan = {
+        'nmaprun': {},
+        'scaninfo': {},
+        'data': {}
+    }
+
+    if root.tag == 'nmaprun':
+        for attr in root.attrib:
+            if attr != 'xmloutputversion':
+                scan['nmaprun'][attr] = root.attrib[attr]
+
+    
+    for child in root:
+        if child.tag == 'scaninfo':
+            for info in child.attrib:
+                scan['scaninfo'][info] = child.attrib[info]
+        elif child.tag == 'host':
+
+            ip, temp = parse_host(child)
+            scan['data'][ip] = temp
+    return scan
 
 def main():
 
@@ -53,27 +92,24 @@ def main():
 
     argparser.add_argument('-i','--input', help='Input file', required=True, type=argparse.FileType('r'))
     argparser.add_argument('-o','--output', help='Output file', type=argparse.FileType('w'))
+    argparser.add_argument('--indent', help='Indent json output', type=int, default=0)
+
 
     if len(sys.argv) < 2:
         return argparser.print_help()
 
     args = argparser.parse_args(sys.argv[1:])
 
+    data = parse_file(args.input)
 
-    tree = ET.parse(args.input)
-    root = tree.getroot()
-
-    data = []
-    for child in root:
-        if child.tag == 'host':
-            data.append(getInfo(child))
 
     if not args.output:
-        print(json.dumps(data))
+        print(json.dumps(data, indent=args.indent))
     else:
-        json.dump(data, args.output)
-        print('Finalizado!')
-   
+        json.dump(data, args.output, indent=args.indent)
+
+    print('Done :D')
+
     
 
 if __name__ == '__main__':
