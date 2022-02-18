@@ -83,7 +83,7 @@ def build(repository, output):
     print(f'{Style.BRIGHT}{Fore.YELLOW}[Building] {Style.RESET_ALL}{Style.BRIGHT}{repo_name}{Style.RESET_ALL}')
     ret = os.system(f'PH123243=$(pwd) && cd {repository} && git archive master | (cd $PH123243 && cd {output} && tar x)')
     if ret != 0:
-        print(f'{Style.BRIGHT}{Fore.RED}[Build Fail] {Style.RESET_ALL}{Style.BRIGHT}{repository}{Style.RESET_ALL}{repo_name}{Style.RESET_ALL}')
+        print(f'{Style.BRIGHT}{Fore.RED}[Build Fail] {Style.RESET_ALL}{Style.BRIGHT}{repo_name}{Style.RESET_ALL}')
         return 1
     else:
         print(f'{Style.BRIGHT}{Fore.BLUE}[Build Success] {Style.RESET_ALL}{Style.BRIGHT}{repo_name}{Style.RESET_ALL}')
