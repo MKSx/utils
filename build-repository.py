@@ -92,7 +92,7 @@ def build(repository, output):
 def main():
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument('-r', '--repository', help='Repository to build', type=dir_path, required=True)
+    argparser.add_argument('-r', '--repository', help='Repository to build', type=dir_path)
     argparser.add_argument('-o', '--output', help='Output repository build', type=dir_output, default='./')
     argparser.add_argument('--all', help='Build all repositories folders with .git', action='store_true', default=False)
 
@@ -104,15 +104,19 @@ def main():
     
 
     if not args.all:
+        if not args.repository:
+            return argparser.print_help()
+            
         build(args.repository, args.output)
     else:
-        repositories = [f for f in os.listdir(args.repository) if os.path.isdir(os.path.join(args.repository, f)) and f.lower().endswith('.git')]
+        repository = './' if not args.repository else args.repository
+        repositories = [f for f in os.listdir(repository) if os.path.isdir(os.path.join(repository, f)) and f.lower().endswith('.git')]
         
         output = args.output if args.output.endswith('/') else (args.output + '/')
 
         for repo in repositories:
             try:
-                if build(os.path.join(args.repository, repo), output) == 1:
+                if build(os.path.join(repository, repo), output) == 1:
                     try:
                         os.rmdir(output + repo[:len(repo) - 4])
                     except Exception as e:
