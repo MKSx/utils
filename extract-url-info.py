@@ -5,9 +5,9 @@ from bs4 import BeautifulSoup
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
-requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += 'DES-CBC3-SHA'
 import json, argparse, sys, re
 from hashlib import md5
+import urllib.parse
 
 #https://stackoverflow.com/a/41041028/13886183
 try:
@@ -15,14 +15,32 @@ try:
 except AttributeError:
     pass
 
-REGEX_OPT = {
-    'fortinet': re.compile(r'top.location=[\'|"](.*?)[\'|"]', re.IGNORECASE)
-}
+
+break_titles = [
+    (True, 'HP BladeSystem Onboard'),
+    (True, 'HP Virtual Connect'),
+    (True, 'HP Integrated'),
+    (True, 'HPE iLO Login'),
+    (True, 'HPE Recovery'),
+    (True, 'HP StoreEver'),
+    (True, 'HP UCMDB Server'),
+    (True, 'Cisco Systems'),
+    (False, 'Cisco'),
+    (True, 'Hitachi Device Manager'),
+    (True, 'rondaweb.celular.intranet'),
+    (True, 'Atrium Discovery'),
+    (True, 'Supermicro'),
+    (True, 'It works'),
+    (True, 'OK'),
+    (True, 'NOSSOS SISTEMAS'),
+    (True, 'Tomcat is'),
+    (True, 'Parallel Upgrade')
+]
 
 MD5_TABLE = {
-    'ff21d4a95b17cc5b4433e58769970c35': {
-        'redirect': '/ui/',
-        'title': 'VMware ESXi'
+    '4ada2be6f16e1623de939acae87ea6e7':{
+        'redirect': '/webui/',
+        'title': 'Cisco'
     },
     '37c1af0cf3934d2cdf504c63b93b0aa1': {
         'redirect': '/flow/auth/signin',
@@ -32,97 +50,13 @@ MD5_TABLE = {
         'redirect': '/sanproject/',
         'title': 'Hitachi Device Manager - Storage Navigator'
     },
-    '89147f12959645f37a6037a05f04caab': {
+    '9ecc093bbf2fedac8ee3918612446368': {
         'redirect': None,
-        'title': 'VCenter - VMware vSphere 6'
+        'title': 'Atrium Discovery internal tomcat server'
     },
-    '50a06705d03b18b41ae7eb8d7665a622': {
-        'redirect': '/appliance',
-        'title': 'Login- Symantec NetBackup Web Management Console',
-    },
-    '9118bbfeffeb607067f073b264173e83': {
+    '06a808538adde87a7e5c74c4dcd4ffaa': {
         'redirect': None,
-        'title': 'Welcome to VMware ESXi'
-    },
-    '6228ca7a50fcac3ecaafd21ddbae90bb': {
-        'redirect': None,
-        'title': 'Welcome to VMware ESXi - 5.5.0'
-    },
-    'fd969a4e519ec459445f7bf9885a3739': {
-        'redirect': None,
-        'title': 'Welcome to VMware ESXi - 5.5.0'
-    },
-    'd41d8cd98f00b204e9800998ecf8427e': {
-        'redirect': '/dashboard',
-        'title': 'Welcome to XAMPP'
-    },
-    'c07f661dad49ba32c8f5c9605148fb5f': {
-        'redirect': '/restgui/start.html',
-        'title': 'Login to iDRAC'
-    },
-    '4ada2be6f16e1623de939acae87ea6e7':{
-        'redirect': '/webui',
-        'title': 'Cisco'
-    },
-    '9934ed6eedb0d78ae2a873831013f8c7': {
-        'redirect': None,
-        'title': 'HP DesignJet'
-    },
-    '2d8c71ed8cbc5c464056ea4b95ce689d': {
-        'redirect': None,
-        'title': 'Welcome to VMware vSphere'
-    },
-    '14bacec89f8b6abeae1d9a0cebde763c': {
-        'redirect': None,
-        'title': 'iLO4 - HP ProLiant'
-    },
-    '138bd383afafea5b45aa59575a066d33': {
-        'redirect': None,
-        'title': 'HP - Storage Management Utility'
-    },
-    'f8ec0af2ad1d0debeb5f2554abcea124': {
-        'redirect': None,
-        'title': 'Welcome to VMware vSphere'
-    },
-    'b8e23f9f0f904b3d81ef2e13069bf2b3': {
-        'redirect': None,
-        'title': 'iLO4 - HP ProLiant'
-    },
-    'f9bb30bc910afb31ad5437b658131ad5': {
-        'redirect': None,
-        'title': 'OceanStor ISM'
-    },
-    '97022257c0e41813fc17b661c6f77e18': {
-        'redirect': None,
-        'title': 'Start EMC Unisphere'
-    },
-    'a1552483d401e40acda711025422a12d': {
-        'redirect': None,
-        'title': 'Start EMC Unisphere'
-    },
-    'e08598c479ca5f37d547b85bcace9435': {
-        'redirect': '/index_en.cgi',
-        'title': 'OceanStor ISM'
-    },
-    '35e978c461242f9c4807f13230ab403e': {
-        'redirect': '/index_en.cgi',
-        'title': 'OceanStor ISM'
-    },
-    'b815d4c0b7f9ee5966e3ac4d2f7823a3': {
-        'redirect': None,
-        'title': 'HP - Storage Management Utility'
-    },
-    '4bdea16a4f874b0e45965ed2f382aa84': {
-        'redirect': None,
-        'title': 'Welcome to VMware ESXi - 5.5.0'
-    },
-    '00322a3c86c11c9a6b7d47303c90ba4f': {
-        'redirect': None,
-        'title': 'HP Virtual Connect Manager'
-    },
-    '588ade7ae9e5ad8494daa6757955837d': {
-        'redirect': None,
-        'title': 'HP Virtual Connect Manager'
+        'title': 'rondaweb.celular.intranet'
     },
     'f30839cac40540a6d293f296aace505e': {
         'redirect': None,
@@ -132,78 +66,59 @@ MD5_TABLE = {
         'redirect': None,
         'title': 'It works!'
     },
-    '50431cd86161e83439439db658db492a': {
+    '5388f60d7695cb57b87c799ee62d20b2': {
         'redirect': None,
-        'title': 'Welcome to VMware ESXi - 6.0.0'
+        'title': 'It works!'
     },
-    'b452f0a743b5b99f23a23fafc9f61d8b': {
+    'e0aa021e21dddbd6d8cecec71e9cf564': {
         'redirect': None,
-        'title': 'Welcome to VMware ESXi - 5.5.0'
+        'title': 'OK'
     },
-    '0bfcaf0405a62ce415306ad8172ce6be': {
-        'redirect': '/rsm/',
-        'title': 'RSM Login'
-    },
-    'bd395f9f00f07a196d27df38af7759b1': {
-        'redirect': '/webacs/welcomeAction.do',
-        'title': 'Cisco NCS'
-    },
-    '713a34a43bf27539050453c6a848c653': {
+    'ebaa327ac88e86c379b64a9b5769aada': {
         'redirect': None,
-        'title': 'Check flash:/http.zip , please'
+        'title': 'NOSSOS SISTEMAS ESTAO OCUPADOS POR FAVOR ACESSE NOVAMENTE EM ALGUNS SEGUNDOS ...'
     },
-    '7162869e0efa332d103aea840cee19c1': {
+    'd808943568391c74545c36695b8d7f1c': {
         'redirect': None,
-        'title': 'Management Controller'
+        'title': 'Tomcat is running...'
     },
-    '6a1da869b30c46118278450187274b41': {
+    'c91122466ca87e8ec6c43c77f72dd9e4': {
         'redirect': None,
-        'title': 'Jenkins'
+        'title': 'Parallel Upgrade Tool - putapp.jnlp'
     },
-    'f67f7c219b0107103dfbbc219b691337': {
-        'redirect': '/+CSCOE+/logon.html',
-        'title': 'CISCO - SSL VPN Service'
-    },
-    'a9275c024d4df2fb042910f741506933': {
+    '2f650fff5307a9202bbc639bdd20db18': {
         'redirect': None,
-        'title': 'iBMC'
+        'title': 'Parallel Upgrade Tool - putapp.jnlp'
     },
-    'b4dbef2b5d64400882800c06bbba6748': {
-        'redirect': '/dell_login.html',
-        'title': 'Dell OpenManage Switch Administrator'
+    '3d315b7b59da8a876619b015659c4d33': {
+        'redirect': '/page/login.html',
+        'title': 'Symatec Remote Management'
     }
 }
 
-def get_redirect_html1(text, length=0):
-    if length < 500:
-        text = text.lower().strip().replace(' ', '')
-        temp = re.search(r'window.location=[\'|"](.*?)["|\']', text, re.IGNORECASE)
-        if temp:
-            return temp[1]
-    
-    return None
 
-def get_redirect_http_meta(soup):
-    result = soup.select('meta[http-equiv="refresh" i]')
-    if result and len(result) > 0:
-        result = result[0]
-        key = None
-        sl = []
-        if 'content' in result.attrs:
-            key = 'content'
-        elif 'CONTENT' in result.attrs:
-            key = 'CONTENT'
-        
-        if key != None:
-            result[key] = result[key].lower().replace(' ', '')
-            pos = result[key].find("url=")
-            if pos > -1:
-                return result[key][pos + 4:]
-    return None
 
-def check_md5(hs):
-    if hash in MD5_TABLE:
-        return MD5_TABLE[hs]
+def check_leave_server(url, redirect):
+    proto = 'https' if url.startswith('https://') else 'http'
+    host = re.sub(r'(\/|\?)(.*)','', url.replace(proto + '://', ''))
+    if redirect:
+        if redirect.startswith('http://') or redirect.startswith('https://'):
+            proto = 'https' if redirect.startswith('https://') else 'http'
+            if not redirect.startswith(proto + '://' + host):
+                return True
+    return False
+
+def check_redirect_https(url, redirect):
+    proto = 'https' if url.startswith('https://') else 'http'
+    host = re.sub(r'(\/|\?)(.*)','', url.replace(proto + '://', ''))
+    if proto == 'http' and redirect:
+        if redirect.startswith('http://') or redirect.startswith('https://'):
+            proto = 'https' if redirect.startswith('https://') else 'http'
+            if proto == 'https':
+                if redirect.startswith(proto + '://' + host):
+                    return True
+    return False
+
 
 def get_meta_copyright(soup):
     
@@ -224,24 +139,470 @@ def get_meta_copyright(soup):
     return None
 
 
-def check_rcats(text):
-    if text.find('<rcats  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="rcats.xsd">') > 0:
-        return 'RCATS Status'
+def getILO(url, timeout=10, proxy=None):
+    try:
+        if not url.endswith('/'):
+            url += '/'
+        res = requests.get(f'{url}redfish/v1/', verify=False, timeout=timeout, proxies=proxy)
+        if res.status_code == 200 and (res.headers.get('Content-Type', '').startswith('application/json') or res.text.startswith('{"secjmp"')):
+            data = res.json()
+            if 'Oem' in data:
+                if 'Hpe' in data['Oem']:
+                    if 'Moniker' in data['Oem']['Hpe'] and 'PRODTAG' in data['Oem']['Hpe']['Moniker']:
+                        return 0, data['Oem']['Hpe']['Moniker']['PRODTAG']
+                    if 'Manager' in data['Oem']['Hpe'] and len(data['Oem']['Hpe']['Manager']) > 0 and 'ManagerType' in data['Oem']['Hpe']['Manager'][0]:
+                        return 0, data['Oem']['Hpe']['Manager'][0]['ManagerType']
+                elif 'Hp' in data['Oem']:
+                    if 'Moniker' in data['Oem']['Hp'] and 'PRODTAG' in data['Oem']['Hp']['Moniker']:
+                        return 0, 'HPE ' + data['Oem']['Hp']['Moniker']['PRODTAG']
+                    if 'Manager' in data['Oem']['Hp'] and len(data['Oem']['Hp']['Manager']) > 0 and 'ManagerType' in data['Oem']['Hp']['Manager'][0]:
+                        return 0, 'HPE ' + data['Oem']['Hp']['Manager'][0]['ManagerType']
+        return 1, 'Not Detected'
+    except Exception as e:
+        return 2, str(e)
+
+
+def getiDRAC(url, timeout=10, proxy=None):
+    try:
+
+        res = requests.get(urllib.parse.urljoin(url,'data?get=prodServerGen'), verify=False, timeout=timeout, proxies=proxy)
+        if res.status_code == 200 and res.headers.get('Content-Type', '').startswith('text/xml'):
+            if res.text.find('<prodServerGen>12G</prodServerGen>') > 0:
+                return 0,'iDRAC7'
+            elif res.text.find('<prodServerGen>13G</prodServerGen>') > 0:
+                return 0,'iDRAC8'
+        res = requests.get(urllib.parse.urljoin(url,'restgui/locale/strings/locale_str_en.json'), verify=False, timeout=timeout, proxies=proxy)
+        if res.status_code == 200 and res.headers.get('Content-Type', '').startswith('application/json'):
+            data = res.json()
+            if 'app_title' in data:
+                return 0, data['app_title']
+        res = requests.get(urllib.parse.urljoin(url,'login.html'), verify=False, timeout=timeout, proxies=proxy)
+        if res.status_code == 200:
+            if res.text.find('var tmpDracName = "iDRAC6";') > 0:
+                return 0, 'iDRAC6'
+            if res.text.find('/images/Ttl_2_iDRAC7_Base_ML.png') > 0:
+                return 0, 'iDRAC7'
+        return 1, 'Not Detected'
+    except Exception as e:
+        return 2, [str(e), type(e).__name__]
+
+
+
+def get_redirect_html(text, soup, length=0):
+    if length < 12000:
+        temp = re.search(r'window.location=[\'|"](.*?)["|\']', text, re.IGNORECASE)
+        if temp:
+            return temp[1]
+
+        temp = re.search(r'location.href[\s+?]?=[\s+?]?[\'|"](.*?)["|\']', text, re.IGNORECASE)
+        if temp:
+            return temp[1]
+
+        temp = re.search(r'location[\s+?]?=[\s+?]?[\'|"](.*?)["|\']', text, re.IGNORECASE)
+        if temp:
+            return temp[1]
+
+        temp = re.search(r'location.replace\(["|\'](.*?)["|\']\)', text, re.IGNORECASE)
+        if temp:
+            return temp[1]
+        if text.find('document.location.href = thisURL + "index_en.html";') > 0:
+            return '/index_en.html'
+
+    if soup:
+        result = soup.select('meta[http-equiv="refresh" i]')
+        if result and len(result) > 0:
+            result = result[0]
+            key = None
+            sl = []
+            if 'content' in result.attrs:
+                key = 'content'
+            elif 'CONTENT' in result.attrs:
+                key = 'CONTENT'
+            
+            if key != None:
+                result[key] = result[key].lower().replace(' ', '')
+                pos = result[key].find("url=")
+                if pos > -1:
+                    return result[key][pos + 4:]
     return None
 
-def get_redirect_http_fortinet(text):
-    regex = re.search(REGEX_OPT['fortinet'], text)
-    if regex:
-        return regex[0].replace('top.location=', '').replace('"', '')
-    return None
+def getDellChassis(url, timeout=10, proxy=None):
+    try:
+        res = requests.get(urllib.parse.urljoin(url, '/cgi-bin/webcgi/login'), headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
 
-def check_radcom(text):
-    if text.find('/monserver/AjaxClient/JSP/Login/Login.jsp') > 0:
-        return ['RADCOM', '/monserver/AjaxClient/JSP/Login/Login.jsp']
+        if res.text.find('Chassis Management') > 0:
+            return 0, 'Dell Chassis Management Controller'
+        
+        return 1, None
+    except Exception as e:
+        return 2, [str(e), type(e).__name__]
+            
+def getDellDDSM(url, timeout=10, proxy=None):
+    try:
+        res = requests.get(urllib.parse.urljoin(url, '/ddem/login/'), headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+
+        temp = re.search(r"window.loginInfo = '(.*?)'", res.text)
+        if temp and temp[1].startswith('{'):
+            data = json.loads(temp[1])
+            if 'brand' in data and 'loginTitle' in data['brand']:
+                return 0, data['brand']['loginTitle']
+        
+        return 1, None
+    except Exception as e:
+        return 2, [str(e), type(e).__name__]
+
+def getIBMC(url, timeout=10, proxy=None):
+    try:
+        res = requests.get(urllib.parse.urljoin(url, '/redfish/v1'), headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+
+        if res.status_code == 200 and res.headers.get('Content-Type', '').startswith('application/json'):
+            data = res.json()
+            if 'Oem' in data and 'Huawei' in data['Oem'] and 'ProductName' in data['Oem']['Huawei'] and 'SoftwareName' in data['Oem']['Huawei']:
+                return 0, data['Oem']['Huawei']['SoftwareName'] + ' - ' + data['Oem']['Huawei']['ProductName']
+        return 1, None
+    except Exception as e:
+        return 2, [str(e), type(e).__name__]
+
+def getHPEStorage(url, v2, timeout=10, proxy=None):
+    try:
+        res = requests.get(urllib.parse.urljoin(url, '/v2/js/js_overrides.js' if v2 else '/v3/js/brandStrings.js'), headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+
+        if res.status_code == 200:
+            temp = re.search(r'applicationTitle(\s+\=\s+|\:\s+)"(.*)"[;|,]', res.text)
+            if temp:
+                return 0, temp[2]
+        return 1, None
+    except Exception as e:
+        return 2, [str(e), type(e).__name__]
+
+def getCiscoIse(url, timeout=10, proxy=None):
+    try:
+        res = requests.get(urllib.parse.urljoin(url, '/admin/login.jsp'), headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+
+        if res.status_code == 200:
+            # Check Cisco Product
+            if res.text.find('Cisco Systems') > 0:
+                temp = re.search('productName="(.*?)"', res.text)
+                if temp:
+                    return 0, ('Cisco - ' if temp[1] == 'Identity Services Engine' else '') + temp[1]
+        return 1, None
+    except Exception as e:
+        return 2, [str(e), type(e).__name__]
+
+def getVMWare(url, s, timeout=10, proxy=None):
+    try:
+        res = requests.get(urllib.parse.urljoin(url, '/en/welcomeRes.js' if s != 'ID_WelcomePsc' else '/resources/locale/en/welcomeRes.js'), headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+
+        if res.status_code == 200:
+            temp = re.search(s + '[\s+?]?=[\s+?]?[\'|"](.*?)["|\']', res.text)
+            if temp:
+                return 0, ('VMware - ' if temp[1].find('VMware') < 0 else '') + temp[1]
+
+        return 1, None
+    except Exception as e:
+        return 2, [str(e), type(e).__name__]
+
+def getGenesysPulse(url, timeout=10, proxy=None):
+    try:
+        res = requests.get(urllib.parse.urljoin(url, '/pulse/api/plugins/pulse'), headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+
+        if res.status_code == 200 and res.headers.get('Content-Type', '').startswith('application/json'):
+            data = res.json()
+            if 'name' in data:
+                return 0, ('Genesys - ' if 'provider' in data and data['provider'].startswith('Genesys') else '') + data['name']
+        return 1, None
+    except Exception as e:
+        return 2, [str(e), type(e).__name__]
+
+def getLenel(url, timeout=10, proxy=None):
+    try:
+        res = requests.get(urllib.parse.urljoin(url, '/login.shtm'), headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+
+        if res.status_code == 200:
+            temp =  re.search('<CENTER><H1>(.*?)</H1><HR color="#0055fa"></CENTER>', res.text, re.IGNORECASE)
+            if temp:
+                return 0, 'Lenel - ' + temp[1].replace('&nbsp;', ' ')
+        return 1, None
+    except Exception as e:
+        return 2, [str(e), type(e).__name__]
+
+def getEMCUnisphere(url, timeout=10, proxy=None):
+    try:
+        res = requests.get(urllib.parse.urljoin(url, '/engMessage.js'), headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+
+        if res.status_code == 200:
+            temp = re.search('INDEX_TITLE:[\s+?]?[\'|"](.*?)[\'|"]', res.text, re.IGNORECASE)
+            if temp:
+                return 0, temp[1]
+        return 1, None
+    except Exception as e:
+        return 2, [str(e), type(e).__name__]
+
+
+def getHuaweiFusionSphere(url, timeout=10, proxy=None):
+    try:
+        res = requests.get(urllib.parse.urljoin(url, '/SSOSvr/res/login_en_US.js'), headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+
+        if res.status_code == 200:
+            data = json.loads(res.text.replace('var login_msg = ', '').replace('};', '}'))
+            if 'loginTitleOpenStack' in data:
+                return 0, 'Huawei - ' + data['loginTitleOpenStack']
+        return 1, None
+    except Exception as e:
+        return 2, [str(e), type(e).__name__]
+
+
+
+def get_title_redirect(base, url, timeout, proxy, r=0):
+    #print(f'get_title_redirect("{url}", {timeout})')
+    try:
+        res = requests.get(url, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+
+        title = None
+        redirect = None
+
+        # Check lenovo
+        if url.endswith('/designs/imm/index.php'):
+            if res.text.find('/designs/imm/images/title-imm.png') > 0:
+                return 0, 'Lenovo - Integrated Management Module', redirect
+
+        content_length = int(res.headers.get('Content-Length', '0')) if 'Content-Length' in res.headers else len(res.text)
+        md5sum = md5(res.content).hexdigest() if content_length > 0 else None
+
+
+
+        soup = BeautifulSoup(res.text, 'html.parser')
+
+        if soup.title:
+            title = soup.title.text.strip().replace('\n', '').replace('\u00a0', ' ').replace('\t', ' ')
+
+        if 'Location' in res.headers:
+            redirect = res.headers['Location']
+
+        if not title and not redirect:
+            redirect = get_redirect_html(res.text, soup, content_length)
     
-    return None
+        if r < 1 and redirect and not check_leave_server(base, redirect):
+            return get_title_redirect(
+                base,
+                urllib.parse.urljoin(base if redirect.startswith('/') else url, redirect) if not (redirect.startswith('http://') or redirect.startswith('https://')) else redirect,
+                timeout,
+                proxy,
+                r+1
+            )
+            
+        if not title and not redirect and md5sum in MD5_TABLE:
+            title = MD5_TABLE[md5sum]['title']
+            redirect = MD5_TABLE[md5sum]['redirect']
+        return 0, title, redirect
 
-def get_url_info(url, timeout=10, proxy=None):
+    except Exception as e:
+        return 1, [str(e), type(e).__name__], None
+
+
+
+def check_products(ret, text, md5sum, soup, proxy=None, timeout=10, follow_redirects=False):
+
+    # Check leave from server
+    if check_leave_server(ret['url'], ret['redirect']):
+        print('Leave')
+        return ret
+
+    if not ret['redirect'] and not ret['title']:
+        if md5sum in MD5_TABLE:
+            ret['title'] = MD5_TABLE[md5sum]['title']
+            ret['redirect'] = MD5_TABLE[md5sum]['redirect']
+
+    if ret['status'] != 302 and ret['status'] != 301 and ret['title'] and len(ret['title']) > 0:
+        for i in break_titles:
+            if i[0]:
+                if ret['title'].startswith(i[1]):
+                    return ret
+            else:
+                if ret['title'].find(i[1]) > -1:
+                    return ret
+
+    copyright_meta = get_meta_copyright(soup)
+
+    # HPE products
+    if (ret['server'] and ret['server'].find('HPE-iLO-Server') > -1) or (copyright_meta and copyright_meta.find('Hewlett Packard Enterprise') > -1):
+        if not ret['title'] or len(ret['title']) < 1:
+            code, title = getILO(ret['url'], timeout, proxy)
+            if code == 0:
+                ret['title'] = title
+                return ret
+
+    if not ret['redirect']:
+        ret['redirect'] = get_redirect_html(text, soup, ret['content-length'])
+        if check_leave_server(ret['url'], ret['redirect']):
+            return ret
+    
+
+
+
+    if ret['redirect']:
+        
+        #print('redirect: "%s"' % ret['redirect'])
+        # iDRAC
+        if ret['redirect'].endswith('/start.html') or ret['redirect'].endswith('/sclogin.html?console'):
+            code, title = getiDRAC(ret['url'].replace('/restgui/start.html','').replace('/start.html',''), timeout, proxy)
+            if code == 2:
+                ret['error'] = title[0]
+                ret['error_type'] = title[1]
+            elif code == 0:
+                ret['title'] = title
+                return ret
+
+        # Chassis
+        if ret['redirect'].endswith('/cgi-bin/webcgi/index'):
+            code, title = getDellChassis(ret['url'], timeout, proxy)
+            if code == 2:
+                ret['error'] = title[0]
+                ret['error_type'] = title[1]
+            elif code == 0:
+                ret['title'] = title
+                return ret
+
+        
+        # Dell Data Domain System Manager
+        if ret['redirect'].endswith('/ddem'):
+            code, title = getDellDDSM(ret['url'], timeout, proxy)
+            if code == 2:
+                ret['error'] = title[0]
+                ret['error_type'] = title[1]
+            elif code == 0:
+                ret['title'] = title
+                return ret
+
+        # Check HPE Storage Management Utility
+        if ret['redirect'].endswith('/v2/index.html') or ret['redirect'].endswith('/v3/index.html'):
+            code, title = getHPEStorage(ret['url'],  ret['redirect'].endswith('/v2/index.html'), timeout, proxy)
+            if code == 2:
+                ret['error'] = title[0]
+                ret['error_type'] = title[1]
+            elif code == 0:
+                ret['title'] = title
+                return ret
+
+        # Check Cisco Ise
+        if ret['redirect'].endswith('/admin/'):
+            code, title = getCiscoIse(ret['url'], timeout, proxy)
+            if code == 2:
+                ret['error'] = title[0]
+                ret['error_type'] = title[1]
+            elif code == 0:
+                ret['title'] = title
+                return ret
+        
+        # Set VmWare
+        if ret['redirect'].endswith('/SAAS/apps/'):
+            ret['title'] = 'VMware Workspace ONE'
+            return ret
+
+        # Check genesys pulse
+        if ret['redirect'].endswith('/pulse'):
+            code, title = getGenesysPulse(ret['url'], timeout, proxy)
+            if code == 2:
+                ret['error'] = title[0]
+                ret['error_type'] = title[1]
+            elif code == 0:
+                ret['title'] = title
+                return ret
+
+        # Huawei Openstack
+        if ret['redirect'].endswith('/SSOSvr/login'):
+            code, title = getHuaweiFusionSphere(ret['url'], timeout, proxy)
+            if code == 2:
+                ret['error'] = title[0]
+                ret['error_type'] = title[1]
+            elif code == 0:
+                ret['title'] = title
+                return ret
+
+        # Follow redirect
+        code, title, redirect = get_title_redirect(ret['url'], urllib.parse.urljoin(ret['url'], ret['redirect']) if not (ret['redirect'].startswith('http://') or ret['redirect'].startswith('https://')) else ret['redirect'], timeout, proxy)
+        if code != 0:
+            ret['error'] = title[0]
+            ret['error_type'] = title[1]
+        else:
+            ret['title'] = title
+            ret['redirect'] = redirect if redirect else ret['redirect']
+    else:
+        # No title
+        if not ret['title'] or len(ret['title']) < 1:
+            # Angulas app
+            if text.find('ng-class') > 0 or text.find('ng-controller') > 0:
+                code, title = getIBMC(ret['url'], timeout, proxy)
+                if code == 2:
+                    ret['error'] = title[0]
+                    ret['error_type'] = title[1]
+                elif code == 0:
+                    ret['title'] = title
+                    return ret
+            temp = re.search(r'document.write\("<title>(.*?)<\/title>"\)', text, re.IGNORECASE)
+            if temp:
+
+                ret['title'] = temp[1].replace('" + ', '').replace(' + "', '')
+
+                # Check VMware
+                if ret['title'] in ['ID_EESX_Welcome', 'ID_WelcomePsc', 'ID_VC_Welcome']:
+                    code, title = getVMWare(ret['url'], ret['title'], timeout, proxy)
+                    if code == 2:
+                        ret['error'] = title[0]
+                        ret['error_type'] = title[1]
+                    elif code == 0:
+                        ret['title'] = title
+                        return ret
+
+            # Lenel
+            if text.find('document.getElementById("home").src = "/whome2.shtm";') > 0:
+                code, title = getLenel(ret['url'], timeout, proxy)
+                if code == 2:
+                    ret['error'] = title[0]
+                    ret['error_type'] = title[1]
+                elif code == 0:
+                    ret['title'] = title
+                    return ret
+            # Weblogic
+            if text.find('Welcome to BEA WebLogic Integration') > 0:
+                ret['title'] = 'Welcome to BEA WebLogic Integration'
+                return ret
+            if text.find("document.title= messageMap['INDEX_TITLE'];"):
+                code, title = getEMCUnisphere(ret['url'], timeout, proxy)
+                if code == 2:
+                    ret['error'] = title[0]
+                    ret['error_type'] = title[1]
+                elif code == 0:
+                    ret['title'] = title
+                    return ret
+
+
+    return ret
+
+def get_url_info(url, timeout=10, proxy=None, https_redirect=False):
+
     ret = {
         'success': False,
         'error': None,
@@ -249,8 +610,11 @@ def get_url_info(url, timeout=10, proxy=None):
         'status': 200,
         'redirect': False,
         'title': None,
-        'url': url
+        'url': url,
+        'server': None,
+        'content-length': 0
     }
+
     try:
         
         res = requests.get(url, headers={
@@ -258,78 +622,43 @@ def get_url_info(url, timeout=10, proxy=None):
         }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
 
 
-        
+        ret['status'] = res.status_code
+        if res.status_code == 404:
+            ret['redirect'] = '/console/login/LoginForm.jsp'
 
         ret['success'] = True
-        ret['status'] = res.status_code
+        
         if 'Location' in res.headers:
             ret['redirect'] = res.headers['Location']
         elif 'location' in res.headers:
             ret['redirect'] = res.headers['location']
-        
+
+        if not https_redirect and check_redirect_https(url, ret['redirect']):
+            ret['redirect'] = ret['redirect'].replace(':443/', '/').replace(':443?', '?').replace(':443', '')
+
+            return get_url_info(ret['redirect'], timeout, proxy, True)
+
         soup = BeautifulSoup(res.text, 'html.parser')
         if soup.title:
             ret['title'] = soup.title.text.strip()
 
-        if ret['title'] == 'Burp Suite Professional':
-            ret['title'] = None
-            ret['success'] = False
-            ret['error'] = 'Burp failed to connect'
-            ret['error_type'] = 'ConnectionError'
-            return ret
 
-        content_length = int(res.headers.get('Content-Length', '0')) if 'Content-Length' in res.headers else len(res.text)
+        ret['server'] = res.headers.get('Server', None)
+ 
+        ret['content-length'] = int(res.headers.get('Content-Length', '0')) if 'Content-Length' in res.headers else len(res.text)
 
-        md5sum = md5(res.content).hexdigest() if content_length > 0 else None
-        
-        if md5sum in MD5_TABLE:
-                ret['redirect'] = MD5_TABLE[md5sum]['redirect']
-                ret['title'] = MD5_TABLE[md5sum]['title']
-                return ret
-        
-        #if ret['title'] == None or len(ret['title']) < 1 and content_length > 0:
+        md5sum = md5(res.content).hexdigest() if ret['content-length'] > 0 else None
+        ret = check_products(ret, res.text, md5sum, soup, proxy, timeout)
 
-        if content_length > 0 and (ret['title'] == None or len(ret['title']) < 1):
-            temp = get_redirect_html1(res.text, content_length)
-            if temp != None:
-                ret['redirect'] = temp
-                return ret
 
-            temp = get_redirect_http_meta(soup)
-            if temp != None:
-                ret['redirect'] = temp
-                return ret
-            temp = get_redirect_http_fortinet(res.text)
-            if temp != None:
-                ret['redirect'] = temp
-                return ret
-
-            temp = get_meta_copyright(soup)
-            if temp != None:
-                ret['title'] = temp
-                return ret
-            
-            temp = check_rcats(res.text)
-            if temp != None:
-                ret['title'] = temp
-                return ret
-            temp  = check_radcom(res.text)
-            if temp != None:
-                ret['title'] = temp[0]
-                ret['redirect'] = temp[1]
-                return ret
-            
-            
     except (requests.exceptions.ConnectionError, requests.exceptions.SSLError, requests.exceptions.Timeout, requests.exceptions.ConnectTimeout) as e:
         ret['error'] = str(e)
         ret['error_type'] = type(e).__name__
-
+    except Exception as e:
+        print(e)
     return ret
 
-
 def run(urls, workers=5, timeout=1, log=False, proxy=None):
-    #with futures.ThreadPoolExecutor(max_workers=5)
-    
     data = []
     try:
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
@@ -338,11 +667,14 @@ def run(urls, workers=5, timeout=1, log=False, proxy=None):
                 futures.append(executor.submit(get_url_info, url=url, timeout=timeout, proxy=proxy))
             for future in concurrent.futures.as_completed(futures):
                 res = future.result()
+                
                 data.append(res)
                 if log:
-                    print('URL: %s - Status: %d - Success: %s - Error: %s - Title: %s - Redirect: %s' % (
-                        res['url'], res['status'], res['success'], res['error_type'], res['title'], res['redirect']
+                    
+                    print('URL: %s - Status: %d - Success: %s - Error: %s - Title: %s - Redirect: %s - Server: %s - Content-Length: %d' % (
+                        res['url'], res['status'], res['success'], res['error_type'], res['title'], res['redirect'], res['server'], res['content-length']
                     ))
+
     except KeyboardInterrupt:
         pass
 
@@ -355,7 +687,7 @@ def main():
     argparser.add_argument('-i','--input', help='File with url list', type=argparse.FileType('r'))
     argparser.add_argument('-o','--output', help='Output file', type=argparse.FileType('w'))
     argparser.add_argument('-l', '--log', help='Print url detail progress', action='store_true')
-    argparser.add_argument('--timeout', help='Timeout request', type=int, default=10)
+    argparser.add_argument('-t','--timeout', help='Timeout request', type=int, default=10)
     argparser.add_argument('--workers', help='Workers', type=int, default=1)
     argparser.add_argument('--indent', help='Indent json output', type=int, default=0)
     argparser.add_argument('-u','--url', help='Get url info', type=str)
@@ -388,7 +720,7 @@ def main():
 
     if len(url_list) < 1:
         return print('URL list empty')
-    
+
     workers = args.workers
 
     if workers < 1:
@@ -405,7 +737,6 @@ def main():
         print('Done :D')
     else:
         print("Returned empty")
-
 
 if __name__ == '__main__':
     main()
