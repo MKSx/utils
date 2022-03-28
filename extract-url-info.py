@@ -15,6 +15,7 @@ try:
 except AttributeError:
     pass
 
+USE_PROXY_HTTPS = False
 
 break_titles = [
     (True, 'HP BladeSystem Onboard'),
@@ -97,6 +98,11 @@ MD5_TABLE = {
 }
 
 
+def get_proxy(proxy, url):
+    global USE_PROXY_HTTPS
+    if not USE_PROXY_HTTPS or url.startswith('https://'):
+        return proxy
+    return None
 
 def check_leave_server(url, redirect):
     proto = 'https' if url.startswith('https://') else 'http'
@@ -143,7 +149,7 @@ def getILO(url, timeout=10, proxy=None):
     try:
         if not url.endswith('/'):
             url += '/'
-        res = requests.get(f'{url}redfish/v1/', verify=False, timeout=timeout, proxies=proxy)
+        res = requests.get(f'{url}redfish/v1/', verify=False, timeout=timeout, proxies=get_proxy(proxy, url))
         if res.status_code == 200 and (res.headers.get('Content-Type', '').startswith('application/json') or res.text.startswith('{"secjmp"')):
             data = res.json()
             if 'Oem' in data:
@@ -165,18 +171,18 @@ def getILO(url, timeout=10, proxy=None):
 def getiDRAC(url, timeout=10, proxy=None):
     try:
 
-        res = requests.get(urllib.parse.urljoin(url,'data?get=prodServerGen'), verify=False, timeout=timeout, proxies=proxy)
+        res = requests.get(urllib.parse.urljoin(url,'data?get=prodServerGen'), verify=False, timeout=timeout, proxies=get_proxy(proxy, url))
         if res.status_code == 200 and res.headers.get('Content-Type', '').startswith('text/xml'):
             if res.text.find('<prodServerGen>12G</prodServerGen>') > 0:
                 return 0,'iDRAC7'
             elif res.text.find('<prodServerGen>13G</prodServerGen>') > 0:
                 return 0,'iDRAC8'
-        res = requests.get(urllib.parse.urljoin(url,'restgui/locale/strings/locale_str_en.json'), verify=False, timeout=timeout, proxies=proxy)
+        res = requests.get(urllib.parse.urljoin(url,'restgui/locale/strings/locale_str_en.json'), verify=False, timeout=timeout, proxies=get_proxy(proxy, url))
         if res.status_code == 200 and res.headers.get('Content-Type', '').startswith('application/json'):
             data = res.json()
             if 'app_title' in data:
                 return 0, data['app_title']
-        res = requests.get(urllib.parse.urljoin(url,'login.html'), verify=False, timeout=timeout, proxies=proxy)
+        res = requests.get(urllib.parse.urljoin(url,'login.html'), verify=False, timeout=timeout, proxies=get_proxy(proxy, url))
         if res.status_code == 200:
             if res.text.find('var tmpDracName = "iDRAC6";') > 0:
                 return 0, 'iDRAC6'
@@ -230,7 +236,7 @@ def getDellChassis(url, timeout=10, proxy=None):
     try:
         res = requests.get(urllib.parse.urljoin(url, '/cgi-bin/webcgi/login'), headers={
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=get_proxy(proxy, url))
 
         if res.text.find('Chassis Management') > 0:
             return 0, 'Dell Chassis Management Controller'
@@ -243,7 +249,7 @@ def getDellDDSM(url, timeout=10, proxy=None):
     try:
         res = requests.get(urllib.parse.urljoin(url, '/ddem/login/'), headers={
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=get_proxy(proxy, url))
 
         temp = re.search(r"window.loginInfo = '(.*?)'", res.text)
         if temp and temp[1].startswith('{'):
@@ -259,7 +265,7 @@ def getIBMC(url, timeout=10, proxy=None):
     try:
         res = requests.get(urllib.parse.urljoin(url, '/redfish/v1'), headers={
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=get_proxy(proxy, url))
 
         if res.status_code == 200 and res.headers.get('Content-Type', '').startswith('application/json'):
             data = res.json()
@@ -273,7 +279,7 @@ def getHPEStorage(url, v2, timeout=10, proxy=None):
     try:
         res = requests.get(urllib.parse.urljoin(url, '/v2/js/js_overrides.js' if v2 else '/v3/js/brandStrings.js'), headers={
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=get_proxy(proxy, url))
 
         if res.status_code == 200:
             temp = re.search(r'applicationTitle(\s+\=\s+|\:\s+)"(.*)"[;|,]', res.text)
@@ -287,7 +293,7 @@ def getCiscoIse(url, timeout=10, proxy=None):
     try:
         res = requests.get(urllib.parse.urljoin(url, '/admin/login.jsp'), headers={
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=get_proxy(proxy, url))
 
         if res.status_code == 200:
             # Check Cisco Product
@@ -303,7 +309,7 @@ def getVMWare(url, s, timeout=10, proxy=None):
     try:
         res = requests.get(urllib.parse.urljoin(url, '/en/welcomeRes.js' if s != 'ID_WelcomePsc' else '/resources/locale/en/welcomeRes.js'), headers={
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=get_proxy(proxy, url))
 
         if res.status_code == 200:
             temp = re.search(s + '[\s+?]?=[\s+?]?[\'|"](.*?)["|\']', res.text)
@@ -318,7 +324,7 @@ def getGenesysPulse(url, timeout=10, proxy=None):
     try:
         res = requests.get(urllib.parse.urljoin(url, '/pulse/api/plugins/pulse'), headers={
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=get_proxy(proxy, url))
 
         if res.status_code == 200 and res.headers.get('Content-Type', '').startswith('application/json'):
             data = res.json()
@@ -332,7 +338,7 @@ def getLenel(url, timeout=10, proxy=None):
     try:
         res = requests.get(urllib.parse.urljoin(url, '/login.shtm'), headers={
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=get_proxy(proxy, url))
 
         if res.status_code == 200:
             temp =  re.search('<CENTER><H1>(.*?)</H1><HR color="#0055fa"></CENTER>', res.text, re.IGNORECASE)
@@ -346,7 +352,7 @@ def getEMCUnisphere(url, timeout=10, proxy=None):
     try:
         res = requests.get(urllib.parse.urljoin(url, '/engMessage.js'), headers={
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=get_proxy(proxy, url))
 
         if res.status_code == 200:
             temp = re.search('INDEX_TITLE:[\s+?]?[\'|"](.*?)[\'|"]', res.text, re.IGNORECASE)
@@ -361,7 +367,7 @@ def getHuaweiFusionSphere(url, timeout=10, proxy=None):
     try:
         res = requests.get(urllib.parse.urljoin(url, '/SSOSvr/res/login_en_US.js'), headers={
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=get_proxy(proxy, url))
 
         if res.status_code == 200:
             data = json.loads(res.text.replace('var login_msg = ', '').replace('};', '}'))
@@ -378,7 +384,7 @@ def get_title_redirect(base, url, timeout, proxy, r=0):
     try:
         res = requests.get(url, headers={
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=get_proxy(proxy, url))
 
         title = None
         redirect = None
@@ -619,12 +625,10 @@ def get_url_info(url, timeout=10, proxy=None, https_redirect=False):
         
         res = requests.get(url, headers={
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
-        }, verify=False, timeout=timeout, allow_redirects=False, proxies=proxy)
+        }, verify=False, timeout=timeout, allow_redirects=False, proxies=get_proxy(proxy, url))
 
 
         ret['status'] = res.status_code
-        if res.status_code == 404:
-            ret['redirect'] = '/console/login/LoginForm.jsp'
 
         ret['success'] = True
         
@@ -644,7 +648,7 @@ def get_url_info(url, timeout=10, proxy=None, https_redirect=False):
 
 
         ret['server'] = res.headers.get('Server', None)
- 
+
         ret['content-length'] = int(res.headers.get('Content-Length', '0')) if 'Content-Length' in res.headers else len(res.text)
 
         md5sum = md5(res.content).hexdigest() if ret['content-length'] > 0 else None
@@ -681,7 +685,7 @@ def run(urls, workers=5, timeout=1, log=False, proxy=None):
     return data
 
 def main():
-
+    global USE_PROXY_HTTPS
     argparser = argparse.ArgumentParser()
 
     argparser.add_argument('-i','--input', help='File with url list', type=argparse.FileType('r'))
@@ -692,15 +696,18 @@ def main():
     argparser.add_argument('--indent', help='Indent json output', type=int, default=0)
     argparser.add_argument('-u','--url', help='Get url info', type=str)
     argparser.add_argument('--proxy', help='Set proxy', type=str)
+    argparser.add_argument('--only-https', help='Only https uses proxy', action='store_true')
 
     if len(sys.argv) < 2:
         return argparser.print_help()
 
     args = argparser.parse_args(sys.argv[1:])
 
+    USE_PROXY_HTTPS = args.only_https
+
     proxy = {
         'http': f'http://{args.proxy}',
-        'https': f'https://{args.proxy}'
+        'https': f'http://{args.proxy}'
     } if args.proxy else None
 
     if args.url:
