@@ -1,6 +1,6 @@
 
 import xml.etree.ElementTree as ET
-import json, argparse, sys
+import json, argparse, sys, glob, os
 
 def parse_hostnames(hosts, debug=False):
     ret = []
@@ -86,12 +86,57 @@ def parse_file(file):
             scan['data'][ip] = temp
     return scan
 
+
+class PathInput:
+    path = None
+    is_file = False
+
+    def __init__(self, p, i):
+        self.path = p
+        self.is_file = i
+
+
+# FileType copy
+class ArgParsePathType(object):
+    def __init__(self, mode='r', bufsize=-1, encoding=None, errors=None):
+        self._mode = mode
+        self._bufsize = bufsize
+        self._encoding = encoding
+        self._errors = errors
+
+    def __call__(self, string):
+
+        if os.path.isdir(string):
+            return PathInput(string, False)
+
+        if string == '-':
+            if 'r' in self._mode:
+                return sys.stdin.buffer if 'b' in self._mode else sys.stdin
+            elif any(c in self._mode for c in 'wax'):
+                return sys.stdout.buffer if 'b' in self._mode else sys.stdout
+            else:
+                msg = _('argument "-" with mode %r') % self._mode
+                raise ValueError(msg)
+        try:
+            return PathInput(open(string, self._mode, self._bufsize, self._encoding, self._errors), True)
+        except OSError as e:
+            args = {'filename': string, 'error': e}
+            message = ("can't open '%(filename)s': %(error)s")
+            raise argparse.ArgumentTypeError(message % args)
+
+    def __repr__(self):
+        args = self._mode, self._bufsize
+        kwargs = [('encoding', self._encoding), ('errors', self._errors)]
+        args_str = ', '.join([repr(arg) for arg in args if arg != -1] + ['%s=%r' % (kw, arg) for kw, arg in kwargs if arg is not None])
+        return '%s(%s)' % (type(self).__name__, args_str)
+
+
 def main():
 
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument('-i','--input', help='Input file', required=True, type=argparse.FileType('r'))
-    argparser.add_argument('-o','--output', help='Output file', type=argparse.FileType('w'))
+    argparser.add_argument('-i','--input', help='Input file', type=ArgParsePathType('r'))
+    argparser.add_argument('-o','--output', help='Output file', type=ArgParsePathType('w'))
     argparser.add_argument('--indent', help='Indent json output', type=int, default=0)
 
 
@@ -100,17 +145,27 @@ def main():
 
     args = argparser.parse_args(sys.argv[1:])
 
-    data = parse_file(args.input)
+    if args.input.is_file:
+        if args.output and not args.output.is_file:
+            return print('Output precisa ser um arquivo!')
 
-
-    if not args.output:
-        print(json.dumps(data, indent=args.indent))
+        data = parse_file(args.input)
+        if not args.output:
+            print(json.dumps(data, indent=args.indent))
+        else:
+            json.dump(data, args.output.path, indent=args.indent)    
     else:
-        json.dump(data, args.output, indent=args.indent)
+        if args.output and args.output.is_file:
+            return print('Output precisa ser um diretório!')
+
+        out = args.output.path if args.output else './'
+
+        files = [i.replace('.\\', '').replace('.xml', '')  for i in glob.glob(os.path.join(args.input.path, '*.xml'))]
+        for filename in files:
+            with open(filename + '.xml', 'r') as finput, open(os.path.join(out, os.path.basename(filename) + '.json'), 'w') as foutput:
+                json.dump(parse_file(finput), foutput, indent=4)
 
     print('Done :D')
-
-    
 
 if __name__ == '__main__':
     main()
