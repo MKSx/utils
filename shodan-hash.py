@@ -40,7 +40,9 @@ def main():
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
         }, timeout=args.timeout, verify=False, allow_redirects=False, proxies=proxy)
 
-        print('Hash: %s' % hash(res.content).hexdigest())
+        fh = hash(res.content)
+        print('Favicon hash: %s' % fh)
+        print('\nUse in Shodan:\nhttp.favicon.hash:%s' % fh)
     except Exception as e:
         print(e)
 
