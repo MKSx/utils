@@ -149,7 +149,7 @@ def main():
         if args.output and not args.output.is_file:
             return print('Output precisa ser um arquivo!')
 
-        data = parse_file(args.input)
+        data = parse_file(args.input.path)
         if not args.output:
             print(json.dumps(data, indent=args.indent))
         else:
