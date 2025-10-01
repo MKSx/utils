@@ -8,3 +8,9 @@ leakix.net
 Googlebot
 urllib
 l9scan
+facebookexternalhit
+Twitterbot
+Facebot
+amazonbot
+Python
+curl
