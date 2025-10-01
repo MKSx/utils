@@ -3,3 +3,9 @@ python-requests/2.32.3
 Mozilla/5.0 (compatible; ips-agent)
 Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp��)
 Mozilla/5.0 (compatible; UGAResearchAgent/1.0; Please visit: NISLabUGA.github.io)
+SonyEricssonS500i/R6BC Browser/NetFront/3.3 Profile/MIDP-2.0 Configuration/CLDC-1.1
+Python/3.10 aiohttp/3.11.11
+Go-http-client/1.1
+Mozilla/5.0 (l9scan/2.0.33e27393e2431313e2838313; +https://leakix.net)
+Python-urllib/2.7
+Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)
