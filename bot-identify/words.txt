@@ -1,1 +1,10 @@
-
+openai
+gptbot
+ips-agent
+Yahoo
+aiohttp
+Go-http
+leakix.net
+Googlebot
+urllib
+l9scan
