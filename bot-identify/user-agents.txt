@@ -9,3 +9,11 @@ Go-http-client/1.1
 Mozilla/5.0 (l9scan/2.0.33e27393e2431313e2838313; +https://leakix.net)
 Python-urllib/2.7
 Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)
+Mozilla/5.0 (Windows NT 6.1; WOW64) SkypeUriPreview Preview/0.5 skype-url-preview@microsoft.com
+BlackBerry7520/4.0.0 Profile/MIDP-2.0 Configuration/CLDC-1.1 UP.Browser/5.0.3.3 UP.Link/5.1.2.12 (Google WAP Proxy/1.0)
+(compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html  
+Passwords/8622.1.22.10.9 CFNetwork/3860.100.1 Darwin/25.0.0
+Mozilla/5.0+(compatible; UptimeRobot/2.0; http://www.uptimerobot.com/)
+Hello from Palo Alto Networks, find out more about our scans in https://docs-cortex.paloaltonetworks.com/r/1/Cortex-Xpanse/Scanning-activity
+Mozilla/5.0 zgrab/0.x
+Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)
