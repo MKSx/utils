@@ -25,3 +25,4 @@ iaskspider/2.0(+http://iask.com/help/help_index.html��)
 python-requests/2.32.3
 Googlebot-Image/1.0
 Mozilla/5.0 (compatible; MJ12bot/v2.0.4; http://mj12bot.com/)
+Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:66.0) WhatCMS/1.0
