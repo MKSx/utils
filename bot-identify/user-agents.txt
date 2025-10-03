@@ -17,3 +17,11 @@ Mozilla/5.0+(compatible; UptimeRobot/2.0; http://www.uptimerobot.com/)
 Hello from Palo Alto Networks, find out more about our scans in https://docs-cortex.paloaltonetworks.com/r/1/Cortex-Xpanse/Scanning-activity
 Mozilla/5.0 zgrab/0.x
 Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)
+Mozilla/5.0 (compatible; CMS-Checker/1.0; +https://example.com)
+python-httpx/0.28.1
+Mozilla/5.0 (compatible; InternetMeasurement/1.0; +https://internet-measurement.com/)
+okhttp/4.12.0
+iaskspider/2.0(+http://iask.com/help/help_index.html��)
+python-requests/2.32.3
+Googlebot-Image/1.0
+Mozilla/5.0 (compatible; MJ12bot/v2.0.4; http://mj12bot.com/)
